@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>모바일 페이지</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        header {
+            background-color: #007BFF;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* 캔버스가 상단에 위치하도록 설정 */
+            flex: 1;
+            padding: 0 20px; /* 좌우 여백 설정 */
+        }
+
+        canvas {
+            width: 100%; /* 화면 너비에 맞추되 정사각형 */
+            height: 100vw; /* 캔버스 높이를 화면 너비에 맞추어 정사각형 유지 */
+            max-height: 100%; /* 높이 제한 */
+            background-color: #f0f0f0;
+        }
+
+        .input-container {
+            display: flex;
+            padding: 10px;
+            background-color: #fafafa;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+            bottom: 0;
+        }
+
+        .input-container select,
+        .input-container input,
+        .input-container button {
+            margin-right: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .input-container button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 상단 제목 -->
+    <header>
+        레시피 만들기
+    </header>
+
+    <!-- 캔버스가 헤더 바로 아래 위치 -->
+    <div class="canvas-container">
+        <canvas id="myCanvas"></canvas>
+    </div>
+
+    <!-- 하단 입력창 -->
+    <div class="input-container">
+        <select>
+            <option value="sugar">설탕</option>
+            <option value="honey">꿀</option>
+            <option value="oligo">올리고당</option>
+            <option value="water">물</option>
+            <option value="appleJuice">사과주스</option>
+            <option value="pearJuice">배주스</option>
+            <option value="grapeJuice">포도주스</option>
+        </select>
+        <input type="number" placeholder="숫자 입력">
+        <button type="button">추가</button>
+    </div>
+</div>
+
+<script>
+    // 캔버스 크기 조정
+    const canvas = document.getElementById('myCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        const canvasSize = Math.min(window.innerWidth, window.innerHeight); // 화면의 가로, 세로 중 작은 값
+
+        canvas.width = canvasSize;
+        canvas.height = canvasSize;
+
+        // 간단한 캔버스 그리기 (예시)
+        ctx.fillStyle = '#FF5733';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // 창 크기 변경 시 캔버스 크기 조정
+    window.addEventListener('resize', resizeCanvas);
+
+    // 페이지 로드 시 캔버스 크기 설정
+    resizeCanvas();
+</script>
+</body>
+</html>
