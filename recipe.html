@@ -34,25 +34,70 @@
         .canvas-container {
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* 캔버스가 상단에 위치하도록 설정 */
-            flex: 1;
-            padding: 0 20px; /* 좌우 여백 설정 */
+            align-items: flex-start;
+            padding: 0 20px;
+            margin-bottom: 10px;
         }
 
         canvas {
-            width: 100%; /* 화면 너비에 맞추되 정사각형 */
-            height: 100vw; /* 캔버스 높이를 화면 너비에 맞추어 정사각형 유지 */
-            max-height: 100%; /* 높이 제한 */
+            width: 100%;
+            height: 100vw;
             background-color: #f0f0f0;
         }
 
+        .info-container {
+            text-align: center;
+            padding: 10px;
+            background-color: #fafafa;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .added-items {
+            display: flex;
+            flex-direction: row; /* 수평으로 나열 */
+            flex-wrap: wrap; /* 줄바꿈 가능 */
+            padding: 10px;
+            gap: 10px; /* 항목 간 간격 */
+            overflow: hidden; /* 넘치는 내용 숨기기 */
+            align-items: flex-start; /* 아이템을 상단 정렬 */
+            justify-content: flex-start; /* 좌측 정렬 */
+        }
+
+        .item {
+            display: flex;
+            align-items: center;
+            background: none; /* 배경 투명 */
+            border: none; /* 외곽선 없음 */
+            padding: 5px 10px;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 3px;
+        }
+
+        .delete-button {
+            background: none;
+            border: none;
+            color: red;
+            font-size: 16px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        /* 하단 입력창을 화면 하단에 고정 */
         .input-container {
             display: flex;
             padding: 10px;
             background-color: #fafafa;
             box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-            position: relative;
+            position: fixed;
             bottom: 0;
+            left: 0;
+            width: 100%;
         }
 
         .input-container select,
@@ -83,19 +128,27 @@
         <canvas id="myCanvas"></canvas>
     </div>
 
-    <!-- 하단 입력창 -->
+    <!-- 정보 창: 항목의 합계를 표시 -->
+    <div class="info-container" id="infoContainer">
+        총합: 0
+    </div>
+
+    <!-- 추가된 값이 표시되는 영역 -->
+    <div class="added-items" id="addedItems"></div>
+
+    <!-- 하단 입력창: 화면 하단에 고정 -->
     <div class="input-container">
-        <select>
-            <option value="sugar">설탕</option>
-            <option value="honey">꿀</option>
-            <option value="oligo">올리고당</option>
-            <option value="water">물</option>
-            <option value="appleJuice">사과주스</option>
-            <option value="pearJuice">배주스</option>
-            <option value="grapeJuice">포도주스</option>
+        <select id="ingredientSelect">
+            <option value="설탕">설탕</option>
+            <option value="꿀">꿀</option>
+            <option value="올리고당">올리고당</option>
+            <option value="물">물</option>
+            <option value="사과주스">사과주스</option>
+            <option value="배주스">배주스</option>
+            <option value="포도주스">포도주스</option>
         </select>
-        <input type="number" placeholder="숫자 입력">
-        <button type="button">추가</button>
+        <input type="number" id="ingredientAmount" placeholder="숫자 입력">
+        <button type="button" id="addButton">추가</button>
     </div>
 </div>
 
@@ -105,21 +158,87 @@
     const ctx = canvas.getContext('2d');
 
     function resizeCanvas() {
-        const canvasSize = Math.min(window.innerWidth, window.innerHeight); // 화면의 가로, 세로 중 작은 값
+        const canvasSize = Math.min(window.innerWidth, window.innerHeight);
 
         canvas.width = canvasSize;
         canvas.height = canvasSize;
 
-        // 간단한 캔버스 그리기 (예시)
+        // 간단한 캔버스 그리기
         ctx.fillStyle = '#FF5733';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // 창 크기 변경 시 캔버스 크기 조정
     window.addEventListener('resize', resizeCanvas);
-
-    // 페이지 로드 시 캔버스 크기 설정
     resizeCanvas();
+
+    // 고정된 색상 설정
+    const colorMapping = {
+        '설탕': '#FF5733',
+        '꿀': '#FFC300',
+        '올리고당': '#DAF7A6',
+        '물': '#3498DB',
+        '사과주스': '#E74C3C',
+        '배주스': '#F1C40F',
+        '포도주스': '#8E44AD'
+    };
+
+    const addButton = document.getElementById('addButton');
+    const addedItemsContainer = document.getElementById('addedItems');
+    const infoContainer = document.getElementById('infoContainer');
+
+    let totalAmount = 0;
+
+    addButton.addEventListener('click', function() {
+        const selectElement = document.getElementById('ingredientSelect');
+        const amountElement = document.getElementById('ingredientAmount');
+        const selectedValue = selectElement.value;
+        const enteredAmount = parseInt(amountElement.value, 10);
+
+        if (isNaN(enteredAmount)) {
+            alert('숫자를 입력해주세요.');
+            return;
+        }
+
+        // 항목 생성
+        const item = document.createElement('div');
+        item.classList.add('item');
+
+        const colorBox = document.createElement('div');
+        colorBox.classList.add('color-box');
+        colorBox.style.backgroundColor = colorMapping[selectedValue]; // 값에 따라 고정된 색상
+
+        const itemValue = document.createElement('div');
+        itemValue.classList.add('item-value');
+        itemValue.textContent = `${selectedValue}`;
+
+        const deleteButton = document.createElement('button');
+        deleteButton.classList.add('delete-button');
+        deleteButton.textContent = 'x';
+
+        deleteButton.addEventListener('click', function() {
+            addedItemsContainer.removeChild(item);
+            totalAmount -= enteredAmount;
+            updateInfo();
+        });
+
+        item.appendChild(colorBox);
+        item.appendChild(itemValue);
+        item.appendChild(deleteButton);
+
+        addedItemsContainer.appendChild(item);
+
+        // 총합 업데이트
+        totalAmount += enteredAmount;
+        updateInfo();
+
+        // 입력값 초기화
+        amountElement.value = '';
+    });
+
+    // 정보 창 업데이트 함수
+    function updateInfo() {
+        infoContainer.textContent = `총합: ${totalAmount}`;
+    }
 </script>
 </body>
 </html>
