@@ -48,7 +48,7 @@
         .info-container {
             text-align: center;
             padding: 10px;
-            background-color: #fafafa;
+            background-color: #ffffff;
             font-size: 18px;
             font-weight: bold;
         }
@@ -86,6 +86,14 @@
             font-size: 16px;
             margin-left: 10px;
             cursor: pointer;
+        }
+
+        #warningMessage {
+            color: black;
+            text-align: center;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
         }
 
         /* 하단 입력창을 화면 하단에 고정 */
@@ -130,11 +138,13 @@
 
     <!-- 정보 창: 항목의 합계를 표시 -->
     <div class="info-container" id="infoContainer">
-        총합: 0
     </div>
 
     <!-- 추가된 값이 표시되는 영역 -->
     <div class="added-items" id="addedItems"></div>
+
+    <!-- 경고 메시지 표시 영역 -->
+    <div id="warningMessage"></div>
 
     <!-- 하단 입력창: 화면 하단에 고정 -->
     <div class="input-container">
@@ -149,6 +159,7 @@
         </select>
         <input type="number" id="ingredientAmount" placeholder="숫자 입력">
         <button type="button" id="addButton">추가</button>
+        <button type="button" id="saveButton">저장</button>
     </div>
 </div>
 
@@ -157,16 +168,101 @@
     const canvas = document.getElementById('myCanvas');
     const ctx = canvas.getContext('2d');
 
+
+    const addButton = document.getElementById('addButton');
+    const saveButton = document.getElementById('saveButton');
+    const addedItemsContainer = document.getElementById('addedItems');
+    const infoContainer = document.getElementById('infoContainer');
+
+    // URL 파라미터에서 최대값과 고유 ID를 가져오기
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id') || 'fixed-id'; // 고유 ID를 고정된 값으로 설정
+    const savedData = localStorage.getItem(id);
+    const data = JSON.parse(savedData);
+    const name = data.name ? data.name : '레시피';
+    const maxValue = data.maxValue ? data.maxValue : 10;
+    const targetBrix = data.targetBrix ? data.targetBrix : 10;
+
+    // 각 재료의 Brix 값 설정
+    const brixMapping = {
+        '설탕': 100,
+        '꿀': 80,
+        '올리고당': 60,
+        '물': 0,
+        '사과주스': 12.5,
+        '배주스': 12,
+        '포도주스': 14
+    };
+
+    // 총합을 저장할 변수
+    let totalAmount = 0;
+    let addedItems = [];
+
+    // 캔버스 크기 및 배경 설정 (HIDPI 대응)
     function resizeCanvas() {
         const canvasSize = Math.min(window.innerWidth, window.innerHeight);
+        const dpr = window.devicePixelRatio || 1;
+        const padding = 10; // 위아래 공백
+        const usableHeight = canvasSize - 2 * padding; // 사용 가능한 높이
+        const rectWidth = canvasSize / 2; // 사각형 폭은 화면 폭의 절반
 
-        canvas.width = canvasSize;
-        canvas.height = canvasSize;
+        // 캔버스 크기 설정 (픽셀 밀도 대응)
+        canvas.width = canvasSize * dpr;
+        canvas.height = canvasSize * dpr;
+        canvas.style.width = `${canvasSize}px`;
+        canvas.style.height = `${canvasSize}px`;
 
-        // 간단한 캔버스 그리기
-        ctx.fillStyle = '#FF5733';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // 캔버스 스케일링
+        ctx.scale(dpr, dpr);
+
+        // 캔버스 배경 흰색 설정
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+        // 값 추가될 때 사각형 채우기
+        renderRectangle();
+
+        // 외곽선만 있는 사각형 그리기 (위아래 공백 포함)
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect((canvasSize - rectWidth) / 2, padding, rectWidth, usableHeight);
     }
+
+    // 사각형을 채우는 함수는 동일 (픽셀 밀도만 적용됨)
+    function renderRectangle() {
+        const canvasSize = Math.min(window.innerWidth, window.innerHeight);
+        const dpr = window.devicePixelRatio || 1;
+        const rectWidth = canvasSize / 2; // 사각형 폭은 화면 폭의 절반
+        const padding = 10; // 위아래 공백
+        const usableHeight = canvasSize - 2 * padding; // 사용 가능한 높이
+        let currentHeight = canvasSize - padding; // 사각형 아래부터 시작
+
+        // 캔버스 지우기
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 캔버스 배경 흰색 설정
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+        // 외곽선만 있는 사각형 그리기
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect((canvasSize - rectWidth) / 2, padding, rectWidth, usableHeight);
+
+        // 값에 따른 사각형 채우기
+        addedItems.forEach(item => {
+            const itemHeight = (item.amount / maxValue) * usableHeight;
+
+            // 고유 색상으로 사각형 채우기
+            ctx.fillStyle = item.color;
+            ctx.fillRect((canvasSize - rectWidth) / 2, currentHeight - itemHeight, rectWidth, itemHeight);
+
+            // 높이 갱신 (위로 쌓아올리기)
+            currentHeight -= itemHeight;
+        });
+    }
+
+
 
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
@@ -182,50 +278,41 @@
         '포도주스': '#8E44AD'
     };
 
-    const addButton = document.getElementById('addButton');
-    const addedItemsContainer = document.getElementById('addedItems');
-    const infoContainer = document.getElementById('infoContainer');
+    // 페이지 로드 시 고유 ID로 저장된 데이터 불러오기
+    loadData();
 
-    let totalAmount = 0;
+    saveButton.addEventListener('click', function() {
+        saveData();
+        window.location.href = 'index.html';
+    });
 
     addButton.addEventListener('click', function() {
         const selectElement = document.getElementById('ingredientSelect');
         const amountElement = document.getElementById('ingredientAmount');
         const selectedValue = selectElement.value;
-        const enteredAmount = parseInt(amountElement.value, 10);
+        const enteredAmount = parseFloat(amountElement.value);
 
         if (isNaN(enteredAmount)) {
             alert('숫자를 입력해주세요.');
             return;
         }
 
+        if (totalAmount + enteredAmount > maxValue) {
+            alert(`최대값 ${maxValue}을(를) 초과할 수 없습니다.`);
+            return;
+        }
+
         // 항목 생성
-        const item = document.createElement('div');
-        item.classList.add('item');
+        const item = {
+            name: selectedValue,
+            amount: enteredAmount,
+            brix: brixMapping[selectedValue],
+            color: colorMapping[selectedValue]
+        };
+        addedItems.push(item);
 
-        const colorBox = document.createElement('div');
-        colorBox.classList.add('color-box');
-        colorBox.style.backgroundColor = colorMapping[selectedValue]; // 값에 따라 고정된 색상
-
-        const itemValue = document.createElement('div');
-        itemValue.classList.add('item-value');
-        itemValue.textContent = `${selectedValue}`;
-
-        const deleteButton = document.createElement('button');
-        deleteButton.classList.add('delete-button');
-        deleteButton.textContent = 'x';
-
-        deleteButton.addEventListener('click', function() {
-            addedItemsContainer.removeChild(item);
-            totalAmount -= enteredAmount;
-            updateInfo();
-        });
-
-        item.appendChild(colorBox);
-        item.appendChild(itemValue);
-        item.appendChild(deleteButton);
-
-        addedItemsContainer.appendChild(item);
+        // 추가한 항목 표시
+        renderItems();
 
         // 총합 업데이트
         totalAmount += enteredAmount;
@@ -233,12 +320,104 @@
 
         // 입력값 초기화
         amountElement.value = '';
+
+        // 데이터 저장
+        saveData();
+
+        // 항목 추가 후 사각형 다시 그리기
+        resizeCanvas();
     });
+
+    // 데이터 저장 함수
+    function saveData() {
+        const data = {
+            name,
+            maxValue,
+            totalAmount,
+            targetBrix,
+            addedItems,
+            id
+        };
+        localStorage.setItem(id, JSON.stringify(data));
+    }
+
+    // 데이터 불러오기 함수
+    function loadData() {
+        const savedData = localStorage.getItem(id);
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            totalAmount = data.totalAmount ? data.totalAmount : 0;
+            addedItems = data.addedItems ? data.addedItems : [];
+            renderItems();
+            updateInfo();
+            resizeCanvas();
+        }
+    }
+
+    // 항목 렌더링 함수
+    function renderItems() {
+        addedItemsContainer.innerHTML = '';
+        addedItems.forEach(item => {
+            const itemElement = document.createElement('div');
+            itemElement.classList.add('item');
+
+            const colorBox = document.createElement('div');
+            colorBox.classList.add('color-box');
+            colorBox.style.backgroundColor = item.color;
+
+            const itemValue = document.createElement('div');
+            itemValue.classList.add('item-value');
+            itemValue.textContent = `${item.name}`;
+
+            const deleteButton = document.createElement('button');
+            deleteButton.classList.add('delete-button');
+            deleteButton.textContent = 'x';
+
+            deleteButton.addEventListener('click', function() {
+                addedItems = addedItems.filter(i => i !== item);
+                totalAmount -= item.amount;
+                renderItems();
+                updateInfo();
+                saveData();
+                resizeCanvas();
+            });
+
+            itemElement.appendChild(colorBox);
+            itemElement.appendChild(itemValue);
+            itemElement.appendChild(deleteButton);
+
+            addedItemsContainer.appendChild(itemElement);
+        });
+    }
 
     // 정보 창 업데이트 함수
     function updateInfo() {
-        infoContainer.textContent = `총합: ${totalAmount}`;
+        // 현재 Brix 계산
+        const currentBrix = addedItems.reduce((acc, item) => acc + (item.brix * item.amount) / totalAmount, 0);
+
+        // 예상 알코올 도수 계산
+        const estimatedAlcohol = (currentBrix - targetBrix) * 0.58;
+
+        // 경고 메시지 업데이트
+        const warnings = [];
+
+        if (currentBrix > 30) {
+            warnings.push("현재 Brix가 30을 넘었습니다!");
+        }
+
+        if (totalAmount > maxValue * 0.8) {
+            warnings.push(`내용물이 너무 많습니다!`);
+        }
+
+        // 정보 창 업데이트
+        infoContainer.textContent = `용량: ${totalAmount}/${maxValue}L 현재 Brix: ${currentBrix.toFixed(2)} / 목표 Brix: ${targetBrix} / 예상 알코올 도수: ${Math.max(0, estimatedAlcohol.toFixed(2))}%`;
+
+        // 경고 메시지 표시
+        document.getElementById('warningMessage').textContent = warnings.join(' ');
     }
+
+    // 초기 정보 업데이트
+    updateInfo();
 </script>
 </body>
 </html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대시보드</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100%;
+        }
+
+        header {
+            background-color: #007BFF;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .chart-container {
+            padding: 20px;
+            height: calc(100vh - 120px); /* 상단바와 하단바 제외 */
+        }
+
+        #chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #007BFF;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #chart {
+            width: 100%; /* 가로 크기를 화면에 맞춤 */
+            max-width: 400px; /* 최대 크기를 설정 */
+            height: 400px; /* 정사각형으로 설정 */
+            margin: 0 auto; /* 가운데 정렬 */
+        }
+    </style>
+</head>
+<body>
+
+<header id="brewNameHeader">양조 이름</header>
+
+<div class="chart-container">
+    <div id="chart"></div>
+    <div id="elapsedTime" style="text-align: center; margin-top: 10px; font-size: 14px; color: #555;"></div>
+</div>
+
+<footer id="backButton">돌아가기</footer>
+
+<script>
+    // URL 파라미터에서 id 가져오기
+    const urlParams = new URLSearchParams(window.location.search);
+    const brewId = urlParams.get('brewId');
+
+    if (!brewId) {
+        alert("잘못된 접근입니다. ID가 없습니다.");
+        window.location.href = 'my-brew.html';
+    }
+
+    // 로컬스토리지에서 brews 데이터 가져오기
+    const brews = JSON.parse(localStorage.getItem('brews')) || [];
+    console.log(brews)
+    console.log(brewId)
+    const brew = brews.find(b => b.id === brewId);
+
+    if (!brew) {
+        alert("해당 양조 데이터를 찾을 수 없습니다.");
+        window.location.href = 'my-brew.html';
+    }
+
+    // 상단 바에 brewName 표시
+    const brewNameHeader = document.getElementById('brewNameHeader');
+    brewNameHeader.textContent = brew.name;
+
+    // 하단 버튼 이벤트
+    const backButton = document.getElementById('backButton');
+    backButton.addEventListener('click', function () {
+        window.location.href = 'my-brew.html';
+    });
+
+    // 데이터 가져오기 및 차트 생성
+    async function fetchDataAndRenderChart() {
+        try {
+            // /brew/{deviceId}에서 데이터 가져오기
+            const response = await fetch(`/brew/${brew.deviceId}`);
+            const data = await response.json();
+
+            // 데이터 형식: {"data":"[int]", "first":"datetime"}
+            const chartData = data.data;
+            const firstDate = new Date(data.first);
+
+            // X축과 Y축 데이터 생성
+            const xAxisData = [];
+            const yAxisData = [];
+
+            chartData.forEach((value, index) => {
+                const currentDate = new Date(firstDate);
+                currentDate.setMinutes(currentDate.getMinutes() + index * 10); // 10분 단위 증가
+                xAxisData.push(currentDate.toISOString().split('T')[0]); // YYYY-MM-DD 형식
+                yAxisData.push(value);
+            });
+
+            // 현재 시각과 양조 시작 시간의 차이 계산
+            const now = new Date();
+            console.log(firstDate, now);
+            const diff = now - firstDate + 1000 * 60 * 60 * 9; // 밀리초 단위 차이
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24)); // 일수 계산
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); // 시간 계산
+
+            // 경과 시간 표시
+            const elapsedTimeElement = document.getElementById('elapsedTime');
+            elapsedTimeElement.textContent = `양조 시작으로부터 ${days}일 ${hours}시간`;
+
+            // 차트 렌더링
+            const chart = echarts.init(document.getElementById('chart'));
+            const option = {
+                title: {
+                    text: '양조 데이터',
+                    left: 'center'
+                },
+                tooltip: {
+                    trigger: 'axis'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: xAxisData,
+                    boundaryGap: false,
+                    axisLabel: {
+                        formatter: value => value // YYYY-MM-DD 표시
+                    }
+                },
+                yAxis: {
+                    type: 'value'
+                },
+                series: [
+                    {
+                        name: '데이터',
+                        type: 'line',
+                        data: yAxisData,
+                        smooth: true,
+                        lineStyle: {
+                            width: 2,
+                            color: '#007BFF'
+                        }
+                    }
+                ]
+            };
+            chart.setOption(option);
+            window.addEventListener('resize', () => {
+                chart.resize();
+            });
+        } catch (error) {
+            alert("데이터를 가져오는 데 실패했습니다.");
+            console.error(error);
+        }
+    }
+
+    // 데이터 로드 및 차트 생성
+    fetchDataAndRenderChart();
+</script>
+
+</body>
+</html>

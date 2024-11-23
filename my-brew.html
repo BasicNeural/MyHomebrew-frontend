@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Brew List</title>
+    <style>
+        body, html {
+            height: 100%;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        header {
+            background-color: #007BFF;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .list-view {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .list-item {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .list-item:last-child {
+            color: gray;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .footer-button {
+            background-color: #007BFF;
+            color: white;
+            font-size: 18px;
+            padding: 15px;
+            text-align: center;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>My Homebrew</header>
+
+    <!-- 양조 목록을 표시하는 리스트 -->
+    <div class="list-view" id="brewList">
+        <!-- 목록 항목이 JavaScript로 추가됩니다 -->
+    </div>
+
+    <!-- 화면 하단에 고정된 내 양조 버튼 -->
+    <div class="footer-button" onclick="window.location.href='index.html'">내 레시피</div>
+</div>
+
+<script>
+    const brewList = document.getElementById('brewList');
+
+    // 로컬 스토리지에서 양조 목록 가져오기
+    function loadBrewList() {
+        brewList.innerHTML = ''; // 기존 항목 초기화
+        const brews = JSON.parse(localStorage.getItem('brews') || '[]');
+
+        // 양조 항목 생성
+        brews.forEach(brew => {
+            const listItem = document.createElement('div');
+            listItem.classList.add('list-item');
+            listItem.textContent = brew.name;
+            listItem.onclick = () => {
+                window.location.href = `dashboard.html?brewId=${brew.id}`;
+            };
+            brewList.appendChild(listItem);
+        });
+
+        // 양조 추가 버튼 생성
+        const addBrewItem = document.createElement('div');
+        addBrewItem.classList.add('list-item');
+        addBrewItem.textContent = '양조 생성하기';
+        addBrewItem.onclick = () => {
+            window.location.href = 'create-brew.html';
+        };
+        brewList.appendChild(addBrewItem);
+    }
+
+    // 페이지 로드시 양조 목록 불러오기
+    window.onload = loadBrewList;
+</script>
+
+</body>
+</html>

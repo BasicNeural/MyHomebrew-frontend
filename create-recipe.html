@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>레시피 생성</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>레시피 생성</h1>
+    <input type="text" id="recipeName" placeholder="레시피 이름을 입력하세요" required>
+    <input type="number" id="maxValue" placeholder="총 크기 (L)" required>
+    <input type="number" id="targetBrix" placeholder="목표 Brix" required>
+    <button id="createButton">생성</button>
+</div>
+
+<script>
+    document.getElementById('createButton').addEventListener('click', function() {
+        const recipeName = document.getElementById('recipeName').value;
+        const maxValue = document.getElementById('maxValue').value;
+        const targetBrix = document.getElementById('targetBrix').value;
+
+        if (!recipeName || !maxValue || !targetBrix) {
+            alert('모든 필드를 입력해주세요.');
+            return;
+        }
+
+        // 고유 ID 생성
+        const id = 'recipe-' + Date.now();
+
+        // 레시피 객체 생성
+        const recipe = {
+            name: recipeName,
+            maxValue: parseInt(maxValue),
+            targetBrix: parseFloat(targetBrix),
+            id: id
+        };
+
+        // 로컬스토리지에 저장
+        localStorage.setItem(id, JSON.stringify(recipe));
+
+        // recipe.html 페이지로 이동하면서 URL 인자로 총 크기, 목표 Brix, 고유 ID를 전달
+        window.location.href = `recipe.html?id=${id}`;
+    });
+</script>
+</body>
+</html>

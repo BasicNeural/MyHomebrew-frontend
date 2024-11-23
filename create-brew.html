@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>양조 생성</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #007BFF;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 20px;
+            font-weight: bold;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            padding-top: 70px; /* header 높이 고려 */
+            height: 100%;
+        }
+
+        label {
+            font-size: 16px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        select, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .create-button {
+            background-color: #007BFF;
+            color: white;
+            font-size: 18px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<header>양조 생성</header>
+
+<div class="container">
+    <!-- 레시피 선택 및 양조 이름 입력 폼 -->
+    <label for="recipeSelect">레시피 선택:</label>
+    <select id="recipeSelect">
+        <option value="">레시피를 선택하세요</option>
+    </select>
+
+    <label for="deviceId">장치 ID:</label>
+    <input type="text" id="deviceId" placeholder="장치 ID를 입력하세요. e.g. 000001">
+
+    <label for="brewName">양조 이름:</label>
+    <input type="text" id="brewName" placeholder="양조 이름을 입력하세요">
+
+    <button class="create-button" id="createBrewButton">양조 생성</button>
+</div>
+
+<script>
+    const recipeSelect = document.getElementById('recipeSelect');
+    const createBrewButton = document.getElementById('createBrewButton');
+
+    // 로컬 스토리지에서 모든 레시피를 로드하여 드롭다운에 표시
+    function loadRecipes() {
+        const keys = Object.keys(localStorage);
+        let hasRecipes = false;
+
+        keys.forEach(key => {
+            if (key.startsWith('recipe-')) {
+                hasRecipes = true;
+                const recipe = JSON.parse(localStorage.getItem(key));
+
+                // 드롭다운에 레시피 옵션 추가
+                const option = document.createElement('option');
+                option.value = recipe.id;
+                option.textContent = recipe.name;
+                recipeSelect.appendChild(option);
+            }
+        });
+
+        if (!hasRecipes) {
+            alert("저장된 레시피가 없습니다.");
+        }
+    }
+
+    // 페이지 로드 시 레시피 목록을 로드
+    loadRecipes();
+
+    // 양조 생성 버튼 클릭 시 이벤트 핸들러
+    createBrewButton.addEventListener('click', async function() {
+        const selectedRecipeId = recipeSelect.value;
+        const brewName = document.getElementById('brewName').value.trim();
+        const deviceId = document.getElementById('deviceId').value.trim();
+
+        if (!selectedRecipeId || !brewName || !deviceId) {
+            alert("레시피를 선택하고 양조 이름과 장치 이을 입력하세요.");
+            return;
+        }
+
+        // 현재 시각을 ISO 포맷으로 름장
+        const timestamp = new Date().toISOString();
+
+        // 새로운 양조 데이터 생성
+        const brew = {
+            id: Date.now().toString(), // 고유 ID 생성
+            deviceId: deviceId,
+            name: brewName,
+            recipeId: selectedRecipeId,
+            createdAt: timestamp // 생성 시각 추가
+        };
+
+        // 로컬 스토리지에 양조 저장
+        const brews = JSON.parse(localStorage.getItem('brews')) || [];
+        brews.push(brew);
+        localStorage.setItem('brews', JSON.stringify(brews));
+
+        await fetch(`http://127.0.0.1:8000/brew/${brew.deviceId}`, {
+            method: 'POST'
+        });
+        // my-brew.html 페이지로 이동
+        window.location.href = 'my-brew.html';
+    });
+</script>
+
+</body>
+</html>
