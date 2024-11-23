@@ -142,7 +142,7 @@
         brews.push(brew);
         localStorage.setItem('brews', JSON.stringify(brews));
 
-        await fetch(`http://127.0.0.1:8000/brew/${brew.deviceId}`, {
+        await fetch(`/brew/${brew.deviceId}`, {
             method: 'POST'
         });
         // my-brew.html 페이지로 이동
