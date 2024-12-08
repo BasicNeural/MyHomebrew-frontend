@@ -63,6 +63,7 @@
 <div class="chart-container">
     <div id="chart"></div>
     <div id="elapsedTime" style="text-align: center; margin-top: 10px; font-size: 14px; color: #555;"></div>
+    <div id="adv" style="text-align: center; margin-top: 10px; font-size: 14px; color: #555;"></div>
 </div>
 
 <footer id="backButton">돌아가기</footer>
@@ -79,11 +80,13 @@
 
     // 로컬스토리지에서 brews 데이터 가져오기
     const brews = JSON.parse(localStorage.getItem('brews')) || [];
-    console.log(brews)
-    console.log(brewId)
     const brew = brews.find(b => b.id === brewId);
+    const recipe = JSON.parse(localStorage.getItem(brew.recipeId));
 
-    if (!brew) {
+    console.log(brew);
+    console.log(recipe);
+
+    if (!brew || !recipe) {
         alert("해당 양조 데이터를 찾을 수 없습니다.");
         window.location.href = 'my-brew.html';
     }
@@ -114,23 +117,31 @@
             const xAxisData = [];
             const yAxisData = [];
 
+            let sumCo2 = 0;
+            let elapsedMinutes = 0;
+
             chartData.forEach((value, index) => {
                 const currentDate = new Date(firstDate);
                 currentDate.setMinutes(currentDate.getMinutes() + index * 10); // 10분 단위 증가
                 xAxisData.push(currentDate.toISOString().split('T')[0]); // YYYY-MM-DD 형식
                 yAxisData.push(value);
+                sumCo2 += value;
+                elapsedMinutes += 10;
             });
 
+            console.log(elapsedMinutes);
+
             // 현재 시각과 양조 시작 시간의 차이 계산
-            const now = new Date();
-            console.log(startDate, now);
-            const diff = now - startDate; // 밀리초 단위 차이
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24)); // 일수 계산
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); // 시간 계산
+            const days = Math.trunc(elapsedMinutes / (60 * 24)); // 일 계산
+            const hours = Math.trunc((elapsedMinutes % (60 * 24)) / 60); // 시간 계산
 
             // 경과 시간 표시
             const elapsedTimeElement = document.getElementById('elapsedTime');
             elapsedTimeElement.textContent = `양조 시작으로부터 ${days}일 ${hours}시간`;
+
+
+            const advElement = document.getElementById('adv');
+            advElement.textContent = `예상 도수: ${(sumCo2 * 0.000518 * recipe.totalAmount).toFixed(1)}% ABV`;
 
             // 차트 렌더링
             const chart = echarts.init(document.getElementById('chart'));
