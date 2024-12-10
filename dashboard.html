@@ -141,7 +141,7 @@
 
 
             const advElement = document.getElementById('adv');
-            advElement.textContent = `예상 도수: ${(sumCo2 * 0.000518 * recipe.totalAmount).toFixed(1)}% ABV`;
+            advElement.textContent = `예상 도수: ${(sumCo2 * 0.00031 / recipe.totalAmount).toFixed(1)}% ABV`;
 
             // 차트 렌더링
             const chart = echarts.init(document.getElementById('chart'));
