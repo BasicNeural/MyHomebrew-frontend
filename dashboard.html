@@ -123,7 +123,7 @@
             chartData.forEach((value, index) => {
                 const currentDate = new Date(firstDate);
                 currentDate.setMinutes(currentDate.getMinutes() + index * 10); // 10분 단위 증가
-                xAxisData.push(currentDate.toISOString().split('T')[0]); // YYYY-MM-DD 형식
+                xAxisData.push(currentDate.toISOString().split(':')[0]); // YYYY-MM-DD 형식
                 yAxisData.push(value);
                 sumCo2 += value;
                 elapsedMinutes += 10;
@@ -142,7 +142,6 @@
 
             const advElement = document.getElementById('adv');
             advElement.textContent = `예상 도수: ${(sumCo2 * 0.00031 / recipe.totalAmount).toFixed(1)}% ABV`;
-
             // 차트 렌더링
             const chart = echarts.init(document.getElementById('chart'));
             const option = {
@@ -158,7 +157,7 @@
                     data: xAxisData,
                     boundaryGap: false,
                     axisLabel: {
-                        formatter: value => value // YYYY-MM-DD 표시
+                        formatter: value => value
                     }
                 },
                 yAxis: {
@@ -166,7 +165,7 @@
                 },
                 series: [
                     {
-                        name: '데이터',
+                        name: 'CO2',
                         type: 'line',
                         data: yAxisData,
                         smooth: true,
