@@ -124,7 +124,7 @@
                 const currentDate = new Date(firstDate);
                 currentDate.setMinutes(currentDate.getMinutes() + index * 10); // 10분 단위 증가
                 // YYYY-MM-DD HH:MM 형식
-                xAxisData.push(`${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()} ${currentDate.getHours()}:${currentDate.getMinutes()}`);
+                xAxisData.push(`${currentDate.getMonth() + 1}-${currentDate.getDate()} ${currentDate.getHours()}:${currentDate.getMinutes()}`);
                 yAxisData.push(value);
                 sumCo2 += value;
                 elapsedMinutes += 10;
